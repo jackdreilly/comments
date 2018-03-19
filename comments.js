@@ -47,7 +47,9 @@ function put_comments(post_id, div) {
                 const comment = json[index];
                 d.innerText = comment;
                 div.appendChild(d);
-                div.appendChild(document.createElement("hr"))
+		if (index < json.length - 1) {
+                    div.appendChild(document.createElement("hr"));
+		}
             }
         }
         else if (xmlhttp.status == 400) {
