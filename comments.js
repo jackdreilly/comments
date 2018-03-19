@@ -62,3 +62,13 @@ function put_comments(post_id, div) {
     xmlhttp.open('GET', url + '/get?post_id=' + post_id, true);
     xmlhttp.send();
 }
+
+function auto_comment() {
+    var x = document.getElementById("comment");
+    if (x == null) {
+        x = document.createElement("div");
+        x.setAttribute("id", "comment");
+        document.body.appendChild(x);
+    }
+    put_comments(window.location.href, x);
+}
