@@ -1,4 +1,4 @@
-const url = "http://comments.reillybrothers.net";
+let url = "http://comments.reillybrothers.net";
 
 function put_comments(post_id, div) {
     const xmlhttp = new XMLHttpRequest();

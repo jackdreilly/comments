@@ -4,52 +4,50 @@ import (
 	"net/http"
 	"github.com/jackdreilly/db/db"
 	"encoding/json"
-	"io"
 	"log"
-	"strings"
-	"bytes"
 	"os"
 	"github.com/rs/cors"
+	"flag"
+	"strconv"
 )
 
 type Comments struct {
 	Comments []string
 }
 
+var (
+	dbPort = flag.Int("db_port", 8083, "Port to connect to db instance.")
+	webPort = flag.Int("web_port", 8092, "Port for web server.")
+)
+
 func main() {
 	o := db.DefaultClientOptions()
-	o.Port = 8083
+	o.Port = int32(*dbPort)
 	client, e := db.NewClient(o)
 	check(e)
 	log.SetOutput(os.Stdout)
 	http.HandleFunc("/get", func(writer http.ResponseWriter, request *http.Request) {
 		writer.Header().Set("Content-Type", "application/json")
-		post_id := request.URL.Query().Get("post_id")
-		log.Println("get post_id", post_id)
-		comments, e := client.Get(post_id)
-		if e == nil {
-			io.WriteString(writer, comments)
-		} else {
-			json.NewEncoder(writer).Encode(&Comments{Comments:[]string{}})
+		postId := request.URL.Query().Get("post_id")
+		log.Println("get post_id", postId)
+		comments, e := client.GetList(postId)
+		if e != nil {
+			log.Println("error:", e.Error())
 		}
+		if comments == nil {
+			comments = []string{}
+		}
+		json.NewEncoder(writer).Encode(&Comments{Comments:comments})
 	})
 	http.HandleFunc("/add", func(writer http.ResponseWriter, request *http.Request) {
 		post_id := request.URL.Query().Get("post_id")
 		comment := request.URL.Query().Get("comment")
 		log.Println("add post_id", post_id)
-		comments, e := client.Get(post_id)
-		c := &Comments{}
-		if e == nil {
-			json.NewDecoder(strings.NewReader(comments)).Decode(c)
+		if e := client.Append(post_id, comment); e != nil {
+			log.Println("add error:", e)
 		}
-		c.Comments = append(c.Comments, comment)
-		log.Println("Num comments:", len(c.Comments))
-		log.Println("Comments:", *c)
-		var b bytes.Buffer
-		json.NewEncoder(&b).Encode(&c)
-		client.Set(post_id, b.String())
 	})
-	log.Fatal(http.ListenAndServe(":8092", cors.Default().Handler(http.DefaultServeMux)))
+	log.Fatal(http.ListenAndServe(":" + strconv.Itoa(*webPort), cors.Default().Handler(http.DefaultServeMux)))
 }
 
 func check(e error) {
