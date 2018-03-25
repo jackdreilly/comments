@@ -1,1 +1,1 @@
-/Users/jdr/go/src/github.com/jackdreilly/comments/comments.js
+../comments.js
